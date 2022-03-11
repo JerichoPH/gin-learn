@@ -14,7 +14,7 @@ import (
 
 func initDB() *gorm.DB {
 	dsn := "root:root@tcp(127.0.0.1:3306)/gin_learn?charset=utf8mb4&parseTime=True&loc=Local"
-	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{CreateBatchSize: 1000})
 
 	errAutoMigrate := db.AutoMigrate(&Controllers.User{})
 	if errAutoMigrate != nil {
@@ -36,7 +36,6 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/", func(ctx *gin.Context) {
-
 		userController := &Controllers.UserController{}
 		userController.SetUser("zhangsan", "zhangsan123", "张三")
 
