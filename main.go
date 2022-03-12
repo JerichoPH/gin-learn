@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
-	"gorm.io/driver/mysql"
+	"log"
 	"net/http"
 	"time"
 
+	"gorm.io/driver/mysql"
+
 	"gin-learn/Controllers"
+	"gin-learn/Tools"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -31,21 +34,19 @@ func initDB() *gorm.DB {
 }
 
 func main() {
-	db := initDB() // 初始化数据库
-
+	db := initDB()
 	router := gin.Default()
 
-	router.GET("/", func(ctx *gin.Context) {
-		userController := &Controllers.UserController{}
-		userController.SetUser("zhangsan", "zhangsan123", "张三")
+	router.Use(Tools.Recover) // 异常处理
 
-		user := userController.GetUser()
-		user1 := db.Omit("UserName", "Password", "CreatedAt").Create(&user)
-		user2 := db.Select("UserName", "Password", "CreatedAt").Create(&user)
-
-		fmt.Printf("%v\r\n", *user1)
-		fmt.Printf("%v\r\n", *user2)
-	})
+	v1 := router.Group("/v1")
+	{
+		v1.POST("/user", func(ctx *gin.Context) {
+			userController := &Controllers.UserController{}
+			user := userController.BindForm(ctx).Store(db)
+			ctx.JSON(Tools.ResponseINS().Ok("", user))
+		})
+	}
 
 	server := &http.Server{
 		Addr:           ":8080",
@@ -56,6 +57,6 @@ func main() {
 	}
 	serverErr := server.ListenAndServe()
 	if serverErr != nil {
-		return
+		log.Println("服务器启动错误：", serverErr)
 	}
 }
