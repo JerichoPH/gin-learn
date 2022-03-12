@@ -8,6 +8,7 @@ require (
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/stretchr/testify v1.7.0 // indirect
+	golang.org/x/crypto v0.0.0-20220312131142-6068a2e6cfdc
 	gorm.io/driver/mysql v1.3.2
 	gorm.io/gorm v1.23.2
 )

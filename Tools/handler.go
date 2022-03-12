@@ -1,6 +1,7 @@
 package Tools
 
 import (
+	"gin-learn/Errors"
 	"log"
 	"runtime/debug"
 
@@ -20,9 +21,21 @@ func Recover(c *gin.Context) {
 			case validator.ValidationErrors:
 				// 表单验证错误
 				c.JSON(ResponseINS().ErrValidate("", errorToString(reco)))
+			case Errors.ForbiddenError:
+				// 禁止操作
+				c.JSON(ResponseINS().ErrForbidden(errorToString(reco)))
+			case Errors.EmptyError:
+				// 空数据
+				c.JSON(ResponseINS().ErrEmpty(errorToString(reco)))
+			case Errors.UnAuthorizationError:
+				// 未授权
+				c.JSON(ResponseINS().ErrUnAuthorization())
+			case Errors.UnLoginError:
+				// 未登录
+				c.JSON(ResponseINS().ErrUnLogin())
 			default:
-				// 意外错误
-				c.JSON(ResponseINS().ErrAccident(reco))
+				// 其他错误
+				c.JSON(ResponseINS().ErrAccident(errorToString(reco), reco))
 			}
 
 			c.Abort()
@@ -33,11 +46,11 @@ func Recover(c *gin.Context) {
 }
 
 // recover错误，转string
-func errorToString(r interface{}) string {
-	switch v := r.(type) {
+func errorToString(reco interface{}) string {
+	switch v := reco.(type) {
 	case error:
 		return v.Error()
 	default:
-		return r.(string)
+		return reco.(string)
 	}
 }

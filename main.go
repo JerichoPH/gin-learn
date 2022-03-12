@@ -41,11 +41,25 @@ func main() {
 
 	v1 := router.Group("/v1")
 	{
-		v1.POST("/user", func(ctx *gin.Context) {
-			userController := &Controllers.UserController{}
-			user := userController.BindForm(ctx).Store(db)
-			ctx.JSON(Tools.ResponseINS().Ok("", user))
+
+		v1.POST("/authorization/register", func(ctx *gin.Context) {
+			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
+			userController.BindFormRegister().Register()
+			ctx.JSON(Tools.ResponseINS().Ok("注册成功", nil))
 		})
+
+		v1.POST("/authorization/login", func(ctx *gin.Context) {
+			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
+			user := userController.BindFormLogin().Login()
+			ctx.JSON(Tools.ResponseINS().Ok("登陆成功", user))
+		})
+
+		v1.GET("/user", func(ctx *gin.Context) {
+			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
+			users := userController.GetUsers()
+			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"users": users}))
+		})
+
 	}
 
 	server := &http.Server{

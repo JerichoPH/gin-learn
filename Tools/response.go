@@ -105,6 +105,9 @@ func (cls *response) ErrValidate(msg string, content interface{}) (int, Map) {
 	return 421, cls.Set(msg, content, 421, 5).Get()
 }
 
-func (cls *response) ErrAccident(err interface{}) (int, Map) {
-	return 500, cls.Set("意外错误", err, 500, 6).Get()
+func (cls *response) ErrAccident(msg string, err interface{}) (int, Map) {
+	if msg == "" {
+		msg = "意外错误"
+	}
+	return 500, cls.Set(msg, err, 500, 6).Get()
 }
