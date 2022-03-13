@@ -2,7 +2,7 @@ package Controllers
 
 import (
 	"gin-learn/Errors"
-	"log"
+	"gin-learn/Tools"
 	"reflect"
 	"time"
 
@@ -39,16 +39,16 @@ type Claims struct {
 }
 
 type AccountController struct {
-	CTX                 gin.Context
-	DB                  gorm.DB
-	account             Account
-	accounts            []Account
+	CTX gin.Context
+	DB  gorm.DB
+	Account
+	Accounts            []Account
 	accountFormRegister AccountFormRegister
 	accountFormLogin    AccountFormLogin
 }
 
 func (cls *AccountController) IsEmpty() bool {
-	return reflect.DeepEqual(cls.account, Account{})
+	return reflect.DeepEqual(cls.Account, Account{})
 }
 
 // 根据id获取用户
@@ -59,7 +59,7 @@ func (cls *AccountController) FindById() *AccountController {
 		panic(Errors.ThrowForbidden("id 不能为空"))
 	}
 
-	cls.DB.Where(map[string]interface{}{"id": id}).Find(&cls.account)
+	cls.DB.Where(map[string]interface{}{"id": id}).Find(&cls.Account)
 	return cls
 }
 
@@ -69,7 +69,7 @@ func (cls *AccountController) FindByUsername(username string) *AccountController
 		panic(Errors.ThrowForbidden("用户名不能为空"))
 	}
 
-	cls.DB.Where(map[string]interface{}{"username": username}).Find(&cls.account)
+	cls.DB.Where(map[string]interface{}{"username": username}).Find(&cls.Account)
 	return cls
 }
 
@@ -89,28 +89,10 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 	if isActivate := cls.CTX.Query("is_activate"); isActivate != "" {
 		queries["is_activate"] = isActivate
 	}
-	tx := cls.DB.Where(queries)
 
-	// 排序
-	if order := cls.CTX.Query("order"); order != "" {
-		log.Println("排序", order)
-		tx.Order(order)
-	}
-
-	// 执行查询
-	tx.Find(&cls.accounts)
+	(&Tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB, Queries: queries}).Init().Find(&cls.Accounts)
 
 	return cls
-}
-
-// 获取用户数据
-func (cls *AccountController) GetAccount() Account {
-	return cls.account
-}
-
-// 获取列表
-func (cls *AccountController) GetAccounts() []Account {
-	return cls.accounts
 }
 
 // 绑定注册表单
@@ -132,13 +114,13 @@ func (cls *AccountController) BindFormRegister() *AccountController {
 func (cls *AccountController) Register() *AccountController {
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(cls.accountFormRegister.Password), 14)
 
-	cls.account = Account{
+	cls.Account = Account{
 		Username: cls.accountFormRegister.Username,
 		Password: string(bytes),
 		Nickname: cls.accountFormRegister.Nickname,
 	}
 
-	cls.DB.Create(&cls.account)
+	cls.DB.Create(&cls.Account)
 
 	return cls
 }
@@ -174,7 +156,7 @@ func (cls *AccountController) Login() string {
 		panic(err)
 	}
 
-	cls.account = account
+	cls.Account = account
 
 	return token
 }

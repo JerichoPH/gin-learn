@@ -38,7 +38,7 @@ func JwtCheck(db *gorm.DB) gin.HandlerFunc {
 				panic(Errors.ThrowUnAuthorization("令牌解析失败：用户不存在"))
 			}
 
-			ctx.Set("__currentAccount", accountController.GetAccount())
+			ctx.Set("__currentAccount", accountController.Account)
 		}
 
 		ok = true

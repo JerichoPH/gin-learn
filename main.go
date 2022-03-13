@@ -61,7 +61,7 @@ func main() {
 		// 列表
 		v1.GET("/account", func(ctx *gin.Context) {
 			accountController := &Controllers.AccountController{CTX: *ctx, DB: *db}
-			accounts := accountController.FindMoreByQuery().GetAccounts()
+			accounts := accountController.FindMoreByQuery().Accounts
 			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": accounts}))
 		})
 
@@ -71,7 +71,7 @@ func main() {
 			if accountController.FindById().IsEmpty() {
 				panic(Errors.ThrowEmpty("用户不存在"))
 			}
-			user := accountController.GetAccount()
+			user := accountController.Account
 			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": user}))
 		})
 
