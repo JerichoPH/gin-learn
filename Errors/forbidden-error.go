@@ -1,4 +1,4 @@
-package Errors
+package errors
 
 type ForbiddenError struct{ s string }
 

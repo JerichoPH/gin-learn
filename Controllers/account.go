@@ -1,8 +1,8 @@
-package Controllers
+package controllers
 
 import (
-	"gin-learn/Errors"
-	"gin-learn/Tools"
+	"gin-learn/errors"
+	"gin-learn/tools"
 	"reflect"
 	"time"
 
@@ -14,10 +14,10 @@ import (
 
 type Account struct {
 	gorm.Model
-	Username   string `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
-	Password   string `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
-	Nickname   string `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
-	IsActivate bool   `query:"is_activate" gorm"type:BOOLEAN;NOT NULL;DEFAULT 0;comment '是否被激活';"`
+	Username    string    `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
+	Password    string    `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
+	Nickname    string    `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
+	ActivatedAt time.Time `gorm:"comment '激活时间'"`
 }
 
 type AccountFormRegister struct {
@@ -56,7 +56,7 @@ func (cls *AccountController) FindById() *AccountController {
 	id := cls.CTX.Param("id")
 
 	if id == "" {
-		panic(Errors.ThrowForbidden("id 不能为空"))
+		panic(errors.ThrowForbidden("id 不能为空"))
 	}
 
 	cls.DB.Where(map[string]interface{}{"id": id}).Find(&cls.Account)
@@ -66,7 +66,7 @@ func (cls *AccountController) FindById() *AccountController {
 // 根据用户名读取用户
 func (cls *AccountController) FindByUsername(username string) *AccountController {
 	if username == "" {
-		panic(Errors.ThrowForbidden("用户名不能为空"))
+		panic(errors.ThrowForbidden("用户名不能为空"))
 	}
 
 	cls.DB.Where(map[string]interface{}{"username": username}).Find(&cls.Account)
@@ -79,18 +79,19 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 	cls.CTX.ShouldBindQuery(&account)
 
 	// 搜索条件
-	queries := make(map[string]interface{})
+	w := make(map[string]interface{})
+	n := make(map[string]interface{})
 	if username := cls.CTX.Query("username"); username != "" {
-		queries["username"] = username
+		w["username"] = username
 	}
 	if nickname := cls.CTX.Query("nickname"); nickname != "" {
-		queries["nickname"] = nickname
+		w["nickname"] = nickname
 	}
 	if isActivate := cls.CTX.Query("is_activate"); isActivate != "" {
-		queries["is_activate"] = isActivate
+		n["is_activate"] = nil
 	}
 
-	(&Tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB, Queries: queries}).Init().Find(&cls.Accounts)
+	(&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n).Find(&cls.Accounts)
 
 	return cls
 }
@@ -103,7 +104,7 @@ func (cls *AccountController) BindFormRegister() *AccountController {
 	}
 
 	if accountRegister.Password != accountRegister.PasswordCheck {
-		panic(Errors.ThrowForbidden("两次密码输入不一致"))
+		panic(errors.ThrowForbidden("两次密码输入不一致"))
 	}
 
 	cls.accountFormRegister = accountRegister
@@ -143,11 +144,11 @@ func (cls *AccountController) Login() string {
 	cls.DB.Where(map[string]interface{}{"username": cls.accountFormLogin.Username, "is_activate": true}).First(&account)
 
 	if reflect.DeepEqual(account, Account{}) {
-		panic(Errors.ThrowEmpty("用户不存在"))
+		panic(errors.ThrowEmpty("用户不存在"))
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(cls.accountFormLogin.Password)); err != nil {
-		panic(Errors.ThrowUnAuthorization("账号或密码错误"))
+		panic(errors.ThrowUnAuthorization("账号或密码错误"))
 	}
 
 	token, err := GenerateToken(account.Username, account.Password)

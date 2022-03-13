@@ -1,4 +1,4 @@
-package Controllers
+package controllers
 
 type Role struct {
 	Name string `form:"name" binding:"required"`
