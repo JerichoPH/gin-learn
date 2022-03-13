@@ -62,11 +62,18 @@ func main() {
 	// 用户
 	v1User := router.Group("/v1/user", Middlewares.JwtCheck())
 	{
-		// 用户
+		// 列表
 		v1User.GET("/", func(ctx *gin.Context) {
 			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
 			users := userController.GetUsers()
 			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"users": users}))
+		})
+
+		// 根据id获取用户详情
+		v1User.GET("/:id", func(ctx *gin.Context) {
+			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
+			user := userController.FindById().GetUser()
+			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"user": user}))
 		})
 
 	}

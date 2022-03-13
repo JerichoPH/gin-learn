@@ -12,12 +12,12 @@ import (
 )
 
 type User struct {
-	Id        int64 `gorm:"primary_key"`
+	Id        int64 `gorm:"primary_key" uri:"id" binding:"required"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Username  string `form:"username" uri:"username" binding:"required" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;"`
+	Username  string `form:"username" uri:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;"`
 	Password  string `form:"password" binding:"required" gorm:"type:VARCHAR(128);NOT NULL;"`
-	Nickname  string `form:"nickname" uri:"nickname" binding:"required" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;"`
+	Nickname  string `form:"nickname" uri:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;"`
 }
 
 type UserFormRegister struct {
@@ -45,6 +45,19 @@ type UserController struct {
 	users            []User
 	userFormRegister UserFormRegister
 	userFormLogin    UserFormLogin
+}
+
+// 根据id获取用户
+func (cls *UserController) FindById() *UserController {
+	var user User
+	if err := cls.CTX.ShouldBindUri(&user); err != nil {
+		panic(err)
+	}
+
+	cls.DB.Where(map[string]interface{}{"id": user.Id}).Find(&user)
+
+	cls.user = user
+	return cls
 }
 
 // 获取用户数据
