@@ -12,12 +12,11 @@ import (
 )
 
 type Account struct {
-	Id        int64 `gorm:"primary_key" uri:"id" binding:"required"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Username  string `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;"`
-	Password  string `form:"password" gorm:"type:VARCHAR(128);NOT NULL;"`
-	Nickname  string `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;"`
+	gorm.Model
+	Username   string `query:"username" form:"username" query:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
+	Password   string `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
+	Nickname   string `query:"nickname" form:"nickname" query:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
+	IsActivate bool   `query:"is_activate" gorm"type:BOOLEAN;NOT NULL;DEFAULT 0;comment '是否被激活';"`
 }
 
 type AccountFormRegister struct {
@@ -63,13 +62,35 @@ func (cls *AccountController) FindById() *AccountController {
 	return cls
 }
 
-// 根据用户名获取用户
+// 根据用户名读取用户
 func (cls *AccountController) FindByUsername(username string) *AccountController {
 	if username == "" {
 		panic(Errors.ThrowForbidden("用户名不能为空"))
 	}
 
 	cls.DB.Where(map[string]interface{}{"username": username}).Find(&cls.account)
+	return cls
+}
+
+// 根据Query读取用户列表
+func (cls *AccountController) FindMoreByQuery() *AccountController {
+	var account Account
+	cls.CTX.ShouldBindQuery(&account)
+
+	queries := make(map[string]interface{})
+
+	if username := cls.CTX.Query("username"); username != "" {
+		queries["username"] = username
+	}
+	if nickname := cls.CTX.Query("nickname"); nickname != "" {
+		queries["nickname"] = nickname
+	}
+	if isActivate := cls.CTX.Query("is_activate"); isActivate != "" {
+		queries["is_activate"] = isActivate
+	}
+
+	cls.DB.Where(queries).Find(&cls.accounts)
+
 	return cls
 }
 
@@ -80,8 +101,6 @@ func (cls *AccountController) GetAccount() Account {
 
 // 获取列表
 func (cls *AccountController) GetAccounts() []Account {
-	cls.DB.Find(&cls.accounts)
-
 	return cls.accounts
 }
 
@@ -130,7 +149,7 @@ func (cls *AccountController) BindFormLogin() *AccountController {
 // 登录
 func (cls *AccountController) Login() string {
 	var account Account
-	cls.DB.Where(&Account{Username: cls.accountFormLogin.Username}).First(&account)
+	cls.DB.Where(map[string]interface{}{"username": cls.accountFormLogin.Username, "is_activate": true}).First(&account)
 
 	if reflect.DeepEqual(account, Account{}) {
 		panic(Errors.ThrowEmpty("用户不存在"))
@@ -140,13 +159,13 @@ func (cls *AccountController) Login() string {
 		panic(Errors.ThrowUnAuthorization("账号或密码错误"))
 	}
 
-	cls.account = account
-
-	token, err := GenerateToken(cls.account.Username, cls.account.Password)
+	token, err := GenerateToken(account.Username, account.Password)
 	if err != nil {
 		// 生成jwt错误
 		panic(err)
 	}
+
+	cls.account = account
 
 	return token
 }

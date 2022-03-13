@@ -35,7 +35,7 @@ func JwtCheck(db *gorm.DB) gin.HandlerFunc {
 			// 判断用户是否存在
 			accountController := Controllers.AccountController{DB: *db}
 			if accountController.FindByUsername(claims.Username).IsEmpty() {
-				panic(Errors.ThrowUnAuthorization("用户不存在"))
+				panic(Errors.ThrowUnAuthorization("令牌解析失败：用户不存在"))
 			}
 
 			ctx.Set("__currentAccount", accountController.GetAccount())

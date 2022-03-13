@@ -61,7 +61,7 @@ func main() {
 		// 列表
 		v1.GET("/account", func(ctx *gin.Context) {
 			accountController := &Controllers.AccountController{CTX: *ctx, DB: *db}
-			accounts := accountController.GetAccounts()
+			accounts := accountController.FindMoreByQuery().GetAccounts()
 			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": accounts}))
 		})
 
@@ -69,7 +69,7 @@ func main() {
 		v1.GET("/account/:id", func(ctx *gin.Context) {
 			accountController := &Controllers.AccountController{CTX: *ctx, DB: *db}
 			if accountController.FindById().IsEmpty() {
-				panic(Errors.ThrowUnAuthorization("用户不存在"))
+				panic(Errors.ThrowEmpty("用户不存在"))
 			}
 			user := accountController.GetAccount()
 			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": user}))
