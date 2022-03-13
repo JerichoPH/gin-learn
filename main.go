@@ -21,13 +21,13 @@ func initDB() *gorm.DB {
 	dsn := "root:root@tcp(127.0.0.1:3306)/gin_learn?charset=utf8mb4&parseTime=True&loc=Local"
 	db, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{CreateBatchSize: 1000})
 
-	errAutoMigrate := db.AutoMigrate(&Controllers.User{})
+	errAutoMigrate := db.AutoMigrate(&Controllers.Account{})
 	if errAutoMigrate != nil {
 		fmt.Println("自动迁移错误：", errAutoMigrate)
 		return nil
 	}
 	// Set table options
-	errSetTable := db.Set("gorm:table_options", "ENGINE=Distributed(cluster, default, hits)").AutoMigrate(&Controllers.User{})
+	errSetTable := db.Set("gorm:table_options", "ENGINE=Distributed(cluster, default, hits)").AutoMigrate(&Controllers.Account{})
 	if errSetTable != nil {
 		fmt.Println("增加表错误：", errSetTable)
 		return nil
@@ -41,39 +41,38 @@ func main() {
 
 	router.Use(Errors.RecoverHandler) // 异常处理
 
-	// 权鉴
-	v1Authorization := router.Group("/v1/authorization")
-	{
-		// 注册
-		v1Authorization.POST("/register", func(ctx *gin.Context) {
-			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
-			userController.BindFormRegister().Register()
-			ctx.JSON(Tools.ResponseINS().Ok("注册成功", nil))
-		})
+	// 注册
+	router.POST("/v1/authorization/register", func(ctx *gin.Context) {
+		userController := &Controllers.AccountController{CTX: *ctx, DB: *db}
+		userController.BindFormRegister().Register()
+		ctx.JSON(Tools.ResponseINS().Ok("注册成功", nil))
+	})
 
-		// 登录
-		v1Authorization.POST("/login", func(ctx *gin.Context) {
-			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
-			token := userController.BindFormLogin().Login()
-			ctx.JSON(Tools.ResponseINS().Ok("登陆成功", gin.H{"token": token}))
-		})
-	}
+	// 登录
+	router.POST("/v1/authorization/login", func(ctx *gin.Context) {
+		userController := &Controllers.AccountController{CTX: *ctx, DB: *db}
+		token := userController.BindFormLogin().Login()
+		ctx.JSON(Tools.ResponseINS().Ok("登陆成功", gin.H{"token": token}))
+	})
 
 	// 用户
-	v1User := router.Group("/v1/user", Middlewares.JwtCheck())
+	v1 := router.Group("/v1", Middlewares.JwtCheck(db))
 	{
 		// 列表
-		v1User.GET("/", func(ctx *gin.Context) {
-			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
-			users := userController.GetUsers()
-			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"users": users}))
+		v1.GET("/account", func(ctx *gin.Context) {
+			accountController := &Controllers.AccountController{CTX: *ctx, DB: *db}
+			accounts := accountController.GetAccounts()
+			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": accounts}))
 		})
 
 		// 根据id获取用户详情
-		v1User.GET("/:id", func(ctx *gin.Context) {
-			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
-			user := userController.FindById().GetUser()
-			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"user": user}))
+		v1.GET("/account/:id", func(ctx *gin.Context) {
+			accountController := &Controllers.AccountController{CTX: *ctx, DB: *db}
+			if accountController.FindById().IsEmpty() {
+				panic(Errors.ThrowUnAuthorization("用户不存在"))
+			}
+			user := accountController.GetAccount()
+			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": user}))
 		})
 
 	}

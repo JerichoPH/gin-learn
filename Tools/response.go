@@ -73,8 +73,11 @@ func (cls *response) OkDeleted(msg string) (int, interface{}) {
 	return 204, cls.Set(msg, nil, 204, 0).Get()
 }
 
-func (cls *response) ErrUnAuthorization() (int, interface{}) {
-	return 406, cls.Set("未授权", nil, 406, 1).Get()
+func (cls *response) ErrUnAuthorization(msg string) (int, interface{}) {
+	if msg == "" {
+		msg = "未授权"
+	}
+	return 406, cls.Set(msg, nil, 406, 1).Get()
 }
 
 func (cls *response) ErrUnLogin() (int, Map) {

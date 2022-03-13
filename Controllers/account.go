@@ -11,23 +11,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type User struct {
+type Account struct {
 	Id        int64 `gorm:"primary_key" uri:"id" binding:"required"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Username  string `form:"username" uri:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;"`
-	Password  string `form:"password" binding:"required" gorm:"type:VARCHAR(128);NOT NULL;"`
-	Nickname  string `form:"nickname" uri:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;"`
+	Username  string `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;"`
+	Password  string `form:"password" gorm:"type:VARCHAR(128);NOT NULL;"`
+	Nickname  string `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;"`
 }
 
-type UserFormRegister struct {
+type AccountFormRegister struct {
 	Username      string `form:"username" binding:"required"`
 	Password      string `form:"password" binding:"required"`
 	PasswordCheck string `form:"password_check" binding:"required"`
 	Nickname      string `form:"nickname" binding:"required"`
 }
 
-type UserFormLogin struct {
+type AccountFormLogin struct {
 	Username string `form:"username" binding:"required"`
 	Password string `form:"password" binding:"required"`
 }
@@ -38,98 +38,111 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-type UserController struct {
-	CTX              gin.Context
-	DB               gorm.DB
-	user             User
-	users            []User
-	userFormRegister UserFormRegister
-	userFormLogin    UserFormLogin
+type AccountController struct {
+	CTX                 gin.Context
+	DB                  gorm.DB
+	account             Account
+	accounts            []Account
+	accountFormRegister AccountFormRegister
+	accountFormLogin    AccountFormLogin
+}
+
+func (cls *AccountController) IsEmpty() bool {
+	return reflect.DeepEqual(cls.account, Account{})
 }
 
 // 根据id获取用户
-func (cls *UserController) FindById() *UserController {
-	var user User
-	if err := cls.CTX.ShouldBindUri(&user); err != nil {
-		panic(err)
+func (cls *AccountController) FindById() *AccountController {
+	id := cls.CTX.Param("id")
+
+	if id == "" {
+		panic(Errors.ThrowForbidden("id 不能为空"))
 	}
 
-	cls.DB.Where(map[string]interface{}{"id": user.Id}).Find(&user)
+	cls.DB.Where(map[string]interface{}{"id": id}).Find(&cls.account)
+	return cls
+}
 
-	cls.user = user
+// 根据用户名获取用户
+func (cls *AccountController) FindByUsername(username string) *AccountController {
+	if username == "" {
+		panic(Errors.ThrowForbidden("用户名不能为空"))
+	}
+
+	cls.DB.Where(map[string]interface{}{"username": username}).Find(&cls.account)
 	return cls
 }
 
 // 获取用户数据
-func (cls *UserController) GetUser() User {
-	return cls.user
+func (cls *AccountController) GetAccount() Account {
+	return cls.account
 }
 
 // 获取列表
-func (cls *UserController) GetUsers() []User {
-	cls.DB.Find(&cls.users)
+func (cls *AccountController) GetAccounts() []Account {
+	cls.DB.Find(&cls.accounts)
 
-	return cls.users
+	return cls.accounts
 }
 
 // 绑定注册表单
-func (cls *UserController) BindFormRegister() *UserController {
-	var userRegister UserFormRegister
-	if err := cls.CTX.ShouldBind(&userRegister); err != nil {
+func (cls *AccountController) BindFormRegister() *AccountController {
+	var accountRegister AccountFormRegister
+	if err := cls.CTX.ShouldBind(&accountRegister); err != nil {
 		panic(err)
 	}
 
-	if userRegister.Password != userRegister.PasswordCheck {
+	if accountRegister.Password != accountRegister.PasswordCheck {
 		panic(Errors.ThrowForbidden("两次密码输入不一致"))
 	}
 
-	cls.userFormRegister = userRegister
+	cls.accountFormRegister = accountRegister
 	return cls
 }
 
 // 注册
-func (cls *UserController) Register() *UserController {
-	bytes, _ := bcrypt.GenerateFromPassword([]byte(cls.userFormRegister.Password), 14)
+func (cls *AccountController) Register() *AccountController {
+	bytes, _ := bcrypt.GenerateFromPassword([]byte(cls.accountFormRegister.Password), 14)
 
-	cls.user = User{
-		Username: cls.userFormRegister.Username,
+	cls.account = Account{
+		Username: cls.accountFormRegister.Username,
 		Password: string(bytes),
-		Nickname: cls.userFormRegister.Nickname,
+		Nickname: cls.accountFormRegister.Nickname,
 	}
 
-	cls.DB.Create(&cls.user)
+	cls.DB.Create(&cls.account)
 
 	return cls
 }
 
 // 绑定登录表单
-func (cls *UserController) BindFormLogin() *UserController {
-	var userLogin UserFormLogin
-	if err := cls.CTX.ShouldBind(&userLogin); err != nil {
+func (cls *AccountController) BindFormLogin() *AccountController {
+	var accountLogin AccountFormLogin
+	if err := cls.CTX.ShouldBind(&accountLogin); err != nil {
 		panic(err)
 	}
 
-	cls.userFormLogin = userLogin
+	cls.accountFormLogin = accountLogin
 
 	return cls
 }
 
 // 登录
-func (cls *UserController) Login() string {
-	var user User
-	cls.DB.Where(&User{Username: cls.userFormLogin.Username}).First(&user)
+func (cls *AccountController) Login() string {
+	var account Account
+	cls.DB.Where(&Account{Username: cls.accountFormLogin.Username}).First(&account)
 
-	if reflect.DeepEqual(user, User{}) {
+	if reflect.DeepEqual(account, Account{}) {
 		panic(Errors.ThrowEmpty("用户不存在"))
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(cls.userFormLogin.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(cls.accountFormLogin.Password)); err != nil {
 		panic(Errors.ThrowUnAuthorization("账号或密码错误"))
 	}
 
-	cls.user = user
+	cls.account = account
 
-	token, err := GenerateToken(cls.user.Username, cls.user.Password)
+	token, err := GenerateToken(cls.account.Username, cls.account.Password)
 	if err != nil {
 		// 生成jwt错误
 		panic(err)
