@@ -81,6 +81,13 @@ func main() {
 			ctx.JSON(tools.CorrectIns().Ok("", gin.H{"statuses": statuses}))
 		})
 
+		// 新建状态
+		v1.POST("/status", func(ctx *gin.Context) {
+			statusController := &controllers.StatusController{CTX: *ctx, DB: *db}
+			statusController.BindFormStore().Store()
+			ctx.JSON(tools.CorrectIns().Created("", gin.H{"status": statusController.Status}))
+		})
+
 	}
 
 	server := &http.Server{
