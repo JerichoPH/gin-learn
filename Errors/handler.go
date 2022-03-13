@@ -1,7 +1,7 @@
-package Tools
+package Errors
 
 import (
-	"gin-learn/Errors"
+	"gin-learn/Tools"
 	"log"
 	"runtime/debug"
 
@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func Recover(c *gin.Context) {
+func RecoverHandler(c *gin.Context) {
 	defer func() {
 		if reco := recover(); reco != nil {
 			//打印错误堆栈信息
@@ -20,22 +20,22 @@ func Recover(c *gin.Context) {
 			switch reco.(type) {
 			case validator.ValidationErrors:
 				// 表单验证错误
-				c.JSON(ResponseINS().ErrValidate("", errorToString(reco)))
-			case Errors.ForbiddenError:
+				c.JSON(Tools.ResponseINS().ErrValidate("", errorToString(reco)))
+			case ForbiddenError:
 				// 禁止操作
-				c.JSON(ResponseINS().ErrForbidden(errorToString(reco)))
-			case Errors.EmptyError:
+				c.JSON(Tools.ResponseINS().ErrForbidden(errorToString(reco)))
+			case EmptyError:
 				// 空数据
-				c.JSON(ResponseINS().ErrEmpty(errorToString(reco)))
-			case Errors.UnAuthorizationError:
+				c.JSON(Tools.ResponseINS().ErrEmpty(errorToString(reco)))
+			case UnAuthorizationError:
 				// 未授权
-				c.JSON(ResponseINS().ErrUnAuthorization())
-			case Errors.UnLoginError:
+				c.JSON(Tools.ResponseINS().ErrUnAuthorization())
+			case UnLoginError:
 				// 未登录
-				c.JSON(ResponseINS().ErrUnLogin())
+				c.JSON(Tools.ResponseINS().ErrUnLogin())
 			default:
 				// 其他错误
-				c.JSON(ResponseINS().ErrAccident(errorToString(reco), reco))
+				c.JSON(Tools.ResponseINS().ErrAccident(errorToString(reco), reco))
 			}
 
 			c.Abort()

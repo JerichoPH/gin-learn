@@ -9,6 +9,8 @@ import (
 	"gorm.io/driver/mysql"
 
 	"gin-learn/Controllers"
+	"gin-learn/Errors"
+	"gin-learn/Middlewares"
 	"gin-learn/Tools"
 
 	"github.com/gin-gonic/gin"
@@ -37,24 +39,31 @@ func main() {
 	db := initDB()
 	router := gin.Default()
 
-	router.Use(Tools.Recover) // 异常处理
+	router.Use(Errors.RecoverHandler) // 异常处理
 
-	v1 := router.Group("/v1")
+	// 权鉴
+	v1Authorization := router.Group("/v1/authorization")
 	{
-
-		v1.POST("/authorization/register", func(ctx *gin.Context) {
+		// 注册
+		v1Authorization.POST("/register", func(ctx *gin.Context) {
 			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
 			userController.BindFormRegister().Register()
 			ctx.JSON(Tools.ResponseINS().Ok("注册成功", nil))
 		})
 
-		v1.POST("/authorization/login", func(ctx *gin.Context) {
+		// 登录
+		v1Authorization.POST("/login", func(ctx *gin.Context) {
 			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
-			user := userController.BindFormLogin().Login()
-			ctx.JSON(Tools.ResponseINS().Ok("登陆成功", user))
+			token := userController.BindFormLogin().Login()
+			ctx.JSON(Tools.ResponseINS().Ok("登陆成功", gin.H{"token": token}))
 		})
+	}
 
-		v1.GET("/user", func(ctx *gin.Context) {
+	// 用户
+	v1User := router.Group("/v1/user", Middlewares.JwtCheck())
+	{
+		// 用户
+		v1User.GET("/", func(ctx *gin.Context) {
 			userController := &Controllers.UserController{CTX: *ctx, DB: *db}
 			users := userController.GetUsers()
 			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"users": users}))
