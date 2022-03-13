@@ -2,7 +2,6 @@ package Errors
 
 import (
 	"fmt"
-	"gin-learn/Tools"
 	"log"
 	"runtime/debug"
 
@@ -19,22 +18,22 @@ func RecoverHandler(c *gin.Context) {
 			switch fmt.Sprintf("%T", reco) {
 			case "*validator.ValidationErrors":
 				// 表单验证错误
-				c.JSON(Tools.ResponseINS().ErrValidate("", errorToString(reco)))
+				c.JSON(Ins().Validate("", errorToString(reco)))
 			case "*Errors.ForbiddenError":
 				// 禁止操作
-				c.JSON(Tools.ResponseINS().ErrForbidden(errorToString(reco)))
+				c.JSON(Ins().Forbidden(errorToString(reco)))
 			case "*Errors.EmptyError":
 				// 空数据
-				c.JSON(Tools.ResponseINS().ErrEmpty(errorToString(reco)))
+				c.JSON(Ins().Empty(errorToString(reco)))
 			case "*Errors.UnAuthorizationError":
 				// 未授权
-				c.JSON(Tools.ResponseINS().ErrUnAuthorization(errorToString(reco)))
+				c.JSON(Ins().UnAuthorization(errorToString(reco)))
 			case "*Errors.UnLoginError":
 				// 未登录
-				c.JSON(Tools.ResponseINS().ErrUnLogin())
+				c.JSON(Ins().ErrUnLogin())
 			default:
 				// 其他错误
-				c.JSON(Tools.ResponseINS().ErrAccident(errorToString(reco), reco))
+				c.JSON(Ins().Accident(errorToString(reco), reco))
 				debug.PrintStack() // 打印堆栈信息
 			}
 

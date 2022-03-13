@@ -45,14 +45,14 @@ func main() {
 	router.POST("/v1/authorization/register", func(ctx *gin.Context) {
 		userController := &Controllers.AccountController{CTX: *ctx, DB: *db}
 		userController.BindFormRegister().Register()
-		ctx.JSON(Tools.ResponseINS().Ok("注册成功", nil))
+		ctx.JSON(Tools.CorrectIns().Ok("注册成功", nil))
 	})
 
 	// 登录
 	router.POST("/v1/authorization/login", func(ctx *gin.Context) {
 		userController := &Controllers.AccountController{CTX: *ctx, DB: *db}
 		token := userController.BindFormLogin().Login()
-		ctx.JSON(Tools.ResponseINS().Ok("登陆成功", gin.H{"token": token}))
+		ctx.JSON(Tools.CorrectIns().Ok("登陆成功", gin.H{"token": token}))
 	})
 
 	// 用户
@@ -62,7 +62,7 @@ func main() {
 		v1.GET("/account", func(ctx *gin.Context) {
 			accountController := &Controllers.AccountController{CTX: *ctx, DB: *db}
 			accounts := accountController.FindMoreByQuery().Accounts
-			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": accounts}))
+			ctx.JSON(Tools.CorrectIns().Ok("", gin.H{"accounts": accounts}))
 		})
 
 		// 根据id获取用户详情
@@ -72,7 +72,7 @@ func main() {
 				panic(Errors.ThrowEmpty("用户不存在"))
 			}
 			user := accountController.Account
-			ctx.JSON(Tools.ResponseINS().Ok("", gin.H{"accounts": user}))
+			ctx.JSON(Tools.CorrectIns().Ok("", gin.H{"accounts": user}))
 		})
 
 	}
