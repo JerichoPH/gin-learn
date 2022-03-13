@@ -2,6 +2,7 @@ package Controllers
 
 import (
 	"gin-learn/Errors"
+	"log"
 	"reflect"
 	"time"
 
@@ -13,9 +14,9 @@ import (
 
 type Account struct {
 	gorm.Model
-	Username   string `query:"username" form:"username" query:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
+	Username   string `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
 	Password   string `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
-	Nickname   string `query:"nickname" form:"nickname" query:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
+	Nickname   string `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
 	IsActivate bool   `query:"is_activate" gorm"type:BOOLEAN;NOT NULL;DEFAULT 0;comment '是否被激活';"`
 }
 
@@ -77,8 +78,8 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 	var account Account
 	cls.CTX.ShouldBindQuery(&account)
 
+	// 搜索条件
 	queries := make(map[string]interface{})
-
 	if username := cls.CTX.Query("username"); username != "" {
 		queries["username"] = username
 	}
@@ -88,8 +89,16 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 	if isActivate := cls.CTX.Query("is_activate"); isActivate != "" {
 		queries["is_activate"] = isActivate
 	}
+	tx := cls.DB.Where(queries)
 
-	cls.DB.Where(queries).Find(&cls.accounts)
+	// 排序
+	if order := cls.CTX.Query("order"); order != "" {
+		log.Println("排序", order)
+		tx.Order(order)
+	}
+
+	// 执行查询
+	tx.Find(&cls.accounts)
 
 	return cls
 }
