@@ -55,10 +55,9 @@ func main() {
 		ctx.JSON(tools.CorrectIns().Ok("登陆成功", gin.H{"token": token}))
 	})
 
-	// 用户
 	v1 := router.Group("/v1", middlewares.JwtCheck(db))
 	{
-		// 列表
+		// 用户列表
 		v1.GET("/account", func(ctx *gin.Context) {
 			accountController := &controllers.AccountController{CTX: *ctx, DB: *db}
 			accounts := accountController.FindMoreByQuery().Accounts
@@ -73,6 +72,13 @@ func main() {
 			}
 			user := accountController.Account
 			ctx.JSON(tools.CorrectIns().Ok("", gin.H{"accounts": user}))
+		})
+
+		// 状态列表
+		v1.GET("/status", func(ctx *gin.Context) {
+			statusController := &controllers.StatusController{CTX: *ctx, DB: *db}
+			statuses := statusController.FindMoreByQuery().Statuses
+			ctx.JSON(tools.CorrectIns().Ok("", gin.H{"statuses": statuses}))
 		})
 
 	}
