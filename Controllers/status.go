@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"gin-learn/errors"
 	"gin-learn/tools"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -9,7 +11,7 @@ import (
 
 type Status struct {
 	gorm.Model
-	Name string `form:"name" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称';`
+	Name string `form:"name" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称'"`
 }
 
 type StatusController struct {
@@ -32,6 +34,13 @@ func (cls *StatusController) BindFormStore() *StatusController {
 
 // 新建
 func (cls *StatusController) Store() *StatusController {
+	var repeatStauts Status
+	cls.DB.Where(map[string]interface{}{"name": cls.Status.Name}).First(&repeatStauts)
+
+	if !reflect.DeepEqual(repeatStauts, Status{}) {
+		panic(errors.ThrowForbidden("状态名称重复"))
+	}
+
 	cls.DB.Create(&cls.Status)
 
 	return cls
