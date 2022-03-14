@@ -31,20 +31,22 @@ func initDB() *gorm.DB {
 }
 
 func main() {
-	db := initDB() // 初始化数据库
+	initDB() // 初始化数据库
 
 	router := gin.Default()
 
 	router.GET("/", func(ctx *gin.Context) {
-		userController := &Controllers.UserController{}
-		userController.SetUser("zhangsan", "zhangsan123", "张三")
-
-		user := userController.GetUser()
-		user1 := db.Omit("UserName", "Password", "CreatedAt").Create(&user)
-		user2 := db.Select("UserName", "Password", "CreatedAt").Create(&user)
-
-		fmt.Printf("%v\r\n", *user1)
-		fmt.Printf("%v\r\n", *user2)
+		a := 3 << 2
+		fmt.Println(a)
+		//userController := &Controllers.UserController{}
+		//userController.SetUser("zhangsan", "zhangsan123", "张三")
+		//
+		//user := userController.GetUser()
+		//user1 := db.Omit("UserName", "Password", "CreatedAt").Create(&user)
+		//user2 := db.Select("UserName", "Password", "CreatedAt").Create(&user)
+		//
+		//fmt.Printf("%v\r\n", *user1)
+		//fmt.Printf("%v\r\n", *user2)
 	})
 
 	server := &http.Server{
