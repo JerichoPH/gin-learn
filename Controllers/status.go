@@ -1,0 +1,53 @@
+package controllers
+
+import (
+	"gin-learn/tools"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+type Status struct {
+	gorm.Model
+	Name string `form:"name" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称';`
+}
+
+type StatusController struct {
+	CTX gin.Context
+	DB  gorm.DB
+	Status
+	Statuses []Status
+}
+
+// 绑定新建表单
+func (cls *StatusController) BindFormStore() *StatusController {
+	var status Status
+	if err := cls.CTX.ShouldBind(&status); err != nil {
+		panic(err)
+	}
+
+	cls.Status = status
+	return cls
+}
+
+// 新建
+func (cls *StatusController) Store() *StatusController {
+	cls.DB.Create(&cls.Status)
+
+	return cls
+}
+
+// 根据Query读取用户列表
+func (cls *StatusController) FindMoreByQuery() *StatusController {
+
+	w := make(map[string]interface{})
+	n := make(map[string]interface{})
+
+	if name := cls.CTX.Query("name"); name != "" {
+		w["name"] = name
+	}
+
+	(&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n).Find(&cls.Statuses)
+
+	return cls
+}
