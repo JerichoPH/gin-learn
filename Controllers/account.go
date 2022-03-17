@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"database/sql"
 	"gin-learn/errors"
 	"gin-learn/tools"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -14,10 +16,10 @@ import (
 
 type Account struct {
 	gorm.Model
-	Username    string    `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
-	Password    string    `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
-	Nickname    string    `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
-	ActivatedAt time.Time `gorm:"comment '激活时间'"`
+	Username    string       `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
+	Password    string       `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
+	Nickname    string       `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
+	ActivatedAt sql.NullTime `gorm:"comment '激活时间'"`
 }
 
 type AccountFormRegister struct {
@@ -87,11 +89,21 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 	if nickname := cls.CTX.Query("nickname"); nickname != "" {
 		w["nickname"] = nickname
 	}
-	if isActivate := cls.CTX.Query("is_activate"); isActivate != "" {
-		n["is_activate"] = nil
+	if activatedAt := cls.CTX.Query("activated_at"); activatedAt != "" {
+		switch activatedAt {
+		case "1":
+			n["activated_at"] = nil
+		case "0":
+			w["activated_at"] = nil
+		}
 	}
 
-	(&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n).Find(&cls.Accounts)
+	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
+	if activatedAtBetween := cls.CTX.Query("activated_at_between"); activatedAtBetween != "" {
+		query.Where("activated_at BETWEEN ? AND ?", strings.Split(activatedAtBetween, "~"))
+	}
+
+	query.Find(&cls.Accounts)
 
 	return cls
 }
@@ -141,7 +153,7 @@ func (cls *AccountController) BindFormLogin() *AccountController {
 // 登录
 func (cls *AccountController) Login() string {
 	var account Account
-	cls.DB.Where(map[string]interface{}{"username": cls.accountFormLogin.Username, "is_activate": true}).First(&account)
+	cls.DB.Where(map[string]interface{}{"username": cls.accountFormLogin.Username}).Not(map[string]interface{}{"activated_at": nil}).First(&account)
 
 	if reflect.DeepEqual(account, Account{}) {
 		panic(errors.ThrowEmpty("用户不存在"))
