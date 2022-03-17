@@ -125,6 +125,11 @@ func (cls *AccountController) BindFormRegister() *AccountController {
 
 // 注册
 func (cls *AccountController) Register() *AccountController {
+	cls.FindByUsername(cls.accountFormRegister.Username)
+	if !reflect.DeepEqual(cls.Account, Account{}) {
+		panic(errors.ThrowForbidden("用户名被占用"))
+	}
+
 	bytes, _ := bcrypt.GenerateFromPassword([]byte(cls.accountFormRegister.Password), 14)
 
 	cls.Account = Account{
