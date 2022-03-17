@@ -14,8 +14,7 @@ type QueryBuilder struct {
 }
 
 func (cls *QueryBuilder) Init(w, n map[string]interface{}) *gorm.DB {
-	tx := cls.DB.Where(w)
-	tx.Not(n)
+	tx := cls.DB.Where(w).Not(n)
 
 	// 排序
 	if order := cls.CTX.Query("order"); order != "" {
