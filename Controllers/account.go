@@ -3,9 +3,7 @@ package controllers
 import (
 	"database/sql"
 	"gin-learn/errors"
-	"gin-learn/tools"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -41,8 +39,8 @@ type Claims struct {
 }
 
 type AccountController struct {
-	CTX gin.Context
-	DB  gorm.DB
+	CTX *gin.Context
+	DB  *gorm.DB
 	Account
 	Accounts            []Account
 	accountFormRegister AccountFormRegister
@@ -53,7 +51,7 @@ func (cls *AccountController) IsEmpty() bool {
 	return reflect.DeepEqual(cls.Account, Account{})
 }
 
-// 根据id获取用户
+// FindById 根据id获取用户
 func (cls *AccountController) FindById() *AccountController {
 	id := cls.CTX.Param("id")
 
@@ -65,7 +63,7 @@ func (cls *AccountController) FindById() *AccountController {
 	return cls
 }
 
-// 根据用户名读取用户
+// FindByUsername 根据用户名读取用户
 func (cls *AccountController) FindByUsername(username string) *AccountController {
 	if username == "" {
 		panic(errors.ThrowForbidden("用户名不能为空"))
@@ -75,10 +73,13 @@ func (cls *AccountController) FindByUsername(username string) *AccountController
 	return cls
 }
 
-// 根据Query读取用户列表
+// FindMoreByQuery 根据Query读取用户列表
 func (cls *AccountController) FindMoreByQuery() *AccountController {
 	var account Account
-	cls.CTX.ShouldBindQuery(&account)
+	err := cls.CTX.ShouldBindQuery(&account)
+	if err != nil {
+		panic(err)
+	}
 
 	// 搜索条件
 	w := make(map[string]interface{})
@@ -98,17 +99,17 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 		}
 	}
 
-	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
-	if activatedAtBetween := cls.CTX.Query("activated_at_between"); activatedAtBetween != "" {
-		query.Where("activated_at BETWEEN ? AND ?", strings.Split(activatedAtBetween, "~"))
-	}
+	//query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
+	//if activatedAtBetween := cls.CTX.Query("activated_at_between"); activatedAtBetween != "" {
+	//	query.Where("activated_at BETWEEN ? AND ?", strings.Split(activatedAtBetween, "~"))
+	//}
 
-	query.Find(&cls.Accounts)
+	//query.Find(&cls.Accounts)
 
 	return cls
 }
 
-// 绑定注册表单
+// BindFormRegister 绑定注册表单
 func (cls *AccountController) BindFormRegister() *AccountController {
 	var accountRegister AccountFormRegister
 	if err := cls.CTX.ShouldBind(&accountRegister); err != nil {
@@ -123,7 +124,7 @@ func (cls *AccountController) BindFormRegister() *AccountController {
 	return cls
 }
 
-// 注册
+// Register 注册
 func (cls *AccountController) Register() *AccountController {
 	cls.FindByUsername(cls.accountFormRegister.Username)
 	if !reflect.DeepEqual(cls.Account, Account{}) {
@@ -143,7 +144,7 @@ func (cls *AccountController) Register() *AccountController {
 	return cls
 }
 
-// 绑定登录表单
+// BindFormLogin 绑定登录表单
 func (cls *AccountController) BindFormLogin() *AccountController {
 	var accountLogin AccountFormLogin
 	if err := cls.CTX.ShouldBind(&accountLogin); err != nil {
@@ -155,7 +156,7 @@ func (cls *AccountController) BindFormLogin() *AccountController {
 	return cls
 }
 
-// 登录
+// Login 登录
 func (cls *AccountController) Login() string {
 	var account Account
 	cls.DB.Where(map[string]interface{}{"username": cls.accountFormLogin.Username}).Not(map[string]interface{}{"activated_at": nil}).First(&account)
@@ -181,7 +182,7 @@ func (cls *AccountController) Login() string {
 
 var jwtSecret = []byte("gin-learn") // 加密密钥
 
-// 根据用户的用户名和密码产生token
+// GenerateToken 根据用户的用户名和密码产生token
 func GenerateToken(username, password string) (string, error) {
 	// 设置token有效时间
 	nowTime := time.Now()
@@ -204,7 +205,7 @@ func GenerateToken(username, password string) (string, error) {
 	return token, err
 }
 
-// 根据传入的token值获取到Claims对象信息，（进而获取其中的用户名和密码）
+// ParseToken 根据传入的token值获取到Claims对象信息，（进而获取其中的用户名和密码）
 func ParseToken(token string) (*Claims, error) {
 
 	//用于解析鉴权的声明，方法内部主要是具体的解码和校验的过程，最终返回*Token

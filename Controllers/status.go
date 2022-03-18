@@ -15,13 +15,13 @@ type Status struct {
 }
 
 type StatusController struct {
-	CTX gin.Context
-	DB  gorm.DB
+	CTX *gin.Context
+	DB  *gorm.DB
 	Status
 	Statuses []Status
 }
 
-// 绑定新建表单
+// BindFormStore 绑定新建表单
 func (cls *StatusController) BindFormStore() *StatusController {
 	var status Status
 	if err := cls.CTX.ShouldBind(&status); err != nil {
@@ -32,12 +32,12 @@ func (cls *StatusController) BindFormStore() *StatusController {
 	return cls
 }
 
-// 新建
+// Store 新建
 func (cls *StatusController) Store() *StatusController {
-	var repeatStauts Status
-	cls.DB.Where(map[string]interface{}{"name": cls.Status.Name}).First(&repeatStauts)
+	var repeatStatus Status
+	cls.DB.Where(map[string]interface{}{"name": cls.Status.Name}).First(&repeatStatus)
 
-	if !reflect.DeepEqual(repeatStauts, Status{}) {
+	if !reflect.DeepEqual(repeatStatus, Status{}) {
 		panic(errors.ThrowForbidden("状态名称重复"))
 	}
 
@@ -46,7 +46,7 @@ func (cls *StatusController) Store() *StatusController {
 	return cls
 }
 
-// 根据Query读取用户列表
+// FindMoreByQuery 根据Query读取用户列表
 func (cls *StatusController) FindMoreByQuery() *StatusController {
 
 	w := make(map[string]interface{})
@@ -57,6 +57,13 @@ func (cls *StatusController) FindMoreByQuery() *StatusController {
 	}
 
 	(&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n).Find(&cls.Statuses)
+
+	return cls
+}
+
+// FindOneById 根据编号搜索
+func (cls *StatusController) FindOneById(id int) *StatusController {
+	cls.DB.Where(id).First(&cls.Status)
 
 	return cls
 }

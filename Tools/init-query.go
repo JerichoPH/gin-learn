@@ -9,8 +9,8 @@ import (
 )
 
 type QueryBuilder struct {
-	CTX gin.Context
-	DB  gorm.DB
+	CTX *gin.Context
+	DB  *gorm.DB
 }
 
 func (cls *QueryBuilder) Init(w, n map[string]interface{}) *gorm.DB {
