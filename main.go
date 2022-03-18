@@ -103,9 +103,6 @@ func main() {
 			statusController.BindFormStore().Store()
 			ctx.JSON(tools.CorrectIns().Created("", gin.H{"status": statusController.Status}))
 		})
-
-		//
-
 	}
 
 	server := &http.Server{
