@@ -2,98 +2,68 @@ package controllers
 
 import (
 	"gin-learn/errors"
+	"gin-learn/models"
 	"gin-learn/tools"
-	"log"
-	"reflect"
-
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"strconv"
 )
 
-type Status struct {
-	gorm.Model
-	Name string `form:"name" binding:"required" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称'"`
-}
-
+// StatusController 状态控制器
 type StatusController struct {
 	CTX *gin.Context
 	DB  *gorm.DB
-	Status
-	Statuses []Status
+}
+
+// Index 列表
+func (cls *StatusController) Index() {
+	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
+	statuses := statusModel.FindMoreByQuery()
+	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"statuses": statuses}))
+}
+
+// Show 详情
+func (cls *StatusController) Show() {
+	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
+
+	id, err := strconv.Atoi(cls.CTX.Param("id"))
+	if err != nil {
+		panic(errors.ThrowForbidden("id必须是数字"))
+	}
+
+	status := statusModel.FindOneById(id)
+	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"status": status}))
 }
 
 // Store 新建
-func (cls *StatusController) Store() *StatusController {
-	var status Status
-	if err := cls.CTX.ShouldBind(&status); err != nil {
-		panic(err)
-	}
-
-	var repeatStatus Status
-	cls.DB.Where(map[string]interface{}{"name": status.Name}).First(&repeatStatus)
-	if !reflect.DeepEqual(repeatStatus, Status{}) {
-		panic(errors.ThrowForbidden("状态名称重复"))
-	}
-
-	cls.DB.Create(status)
-	cls.Status = status
-	return cls
+func (cls *StatusController) Store() {
+	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
+	status := statusModel.Store()
+	cls.CTX.JSON(tools.CorrectIns().Created("", gin.H{"status": status}))
 }
 
-// DeleteById 根据id删除
-func (cls *StatusController) DeleteById(id int) *StatusController {
-	cls.FindOneById(id)
+// Update 更新
+func (cls *StatusController) Update() {
+	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
 
-	log.Println(cls.Status)
+	id, err := strconv.Atoi(cls.CTX.Param("id"))
+	if err != nil {
+		panic(errors.ThrowForbidden("id必须是数字"))
+	}
 
-	cls.DB.Delete(&cls.Status)
-
-	return cls
+	status := statusModel.UpdateById(id)
+	cls.CTX.JSON(tools.CorrectIns().Updated("", gin.H{"status": status}))
 }
 
-// UpdateById 根据id编辑
-func (cls *StatusController) UpdateById(id int) *StatusController {
-	cls.FindOneById(id)
+// Destroy 删除
+func (cls *StatusController) Destroy() {
+	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
 
-	var status Status
-	if err := cls.CTX.ShouldBind(&status); err != nil {
-		panic(err)
+	id, err := strconv.Atoi(cls.CTX.Param("id"))
+	if err != nil {
+		panic(errors.ThrowForbidden("id必须是数字"))
 	}
 
-	var repeatStatus Status
-	cls.DB.Where(map[string]interface{}{"name": status.Name}).Not(map[string]interface{}{"id": id}).First(&repeatStatus)
-	if !reflect.DeepEqual(repeatStatus, Status{}) {
-		panic(errors.ThrowForbidden("状态名称重复"))
-	}
-
-	cls.Status.Name = status.Name
-	cls.DB.Save(cls.Status)
-
-	return cls
-}
-
-// FindMoreByQuery 根据Query读取用户列表
-func (cls *StatusController) FindMoreByQuery() *StatusController {
-
-	w := make(map[string]interface{})
-	n := make(map[string]interface{})
-
-	if name := cls.CTX.Query("name"); name != "" {
-		w["name"] = name
-	}
-
-	(&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n).Find(&cls.Statuses)
-
-	return cls
-}
-
-// FindOneById 根据编号搜索
-func (cls *StatusController) FindOneById(id int) *StatusController {
-	cls.DB.Where(map[string]interface{}{"id": id}).First(&cls.Status)
-
-	if reflect.DeepEqual(cls.Status, Status{}) {
-		panic(errors.ThrowEmpty(""))
-	}
-
-	return cls
+	statusModel.DeleteById(id)
+	cls.CTX.JSON(tools.CorrectIns().Deleted(""))
 }

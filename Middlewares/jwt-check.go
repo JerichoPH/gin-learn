@@ -3,13 +3,13 @@ package middlewares
 import (
 	"gin-learn/controllers"
 	"gin-learn/errors"
+	"reflect"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func JwtCheck(db *gorm.DB) gin.HandlerFunc {
+func JwtCheck() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		tokens := ctx.Request.Header["Token"]
 
@@ -23,7 +23,7 @@ func JwtCheck(db *gorm.DB) gin.HandlerFunc {
 		if token == "" {
 			panic(errors.ThrowUnAuthorization("令牌不存在"))
 		} else {
-			claims, err := controllers.ParseToken(token)
+			claims, err := (&controllers.AuthorizationController{}).ParseJwt(token)
 
 			// 判断令牌是否有效
 			if err != nil {
@@ -33,12 +33,9 @@ func JwtCheck(db *gorm.DB) gin.HandlerFunc {
 			}
 
 			// 判断用户是否存在
-			accountController := controllers.AccountController{DB: db}
-			if accountController.FindByUsername(claims.Username).IsEmpty() {
+			if reflect.DeepEqual(claims, controllers.Claims{}) {
 				panic(errors.ThrowUnAuthorization("令牌解析失败：用户不存在"))
 			}
-
-			ctx.Set("__currentAccount", accountController.Account)
 		}
 
 		ok = true
