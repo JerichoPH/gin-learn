@@ -3,6 +3,7 @@ package controllers
 import (
 	"gin-learn/errors"
 	"gin-learn/tools"
+	"log"
 	"reflect"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,7 @@ import (
 
 type Status struct {
 	gorm.Model
-	Name string `form:"name" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称'"`
+	Name string `form:"name" binding:"required" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称'"`
 }
 
 type StatusController struct {
@@ -21,27 +22,52 @@ type StatusController struct {
 	Statuses []Status
 }
 
-// BindFormStore 绑定新建表单
-func (cls *StatusController) BindFormStore() *StatusController {
+// Store 新建
+func (cls *StatusController) Store() *StatusController {
 	var status Status
 	if err := cls.CTX.ShouldBind(&status); err != nil {
 		panic(err)
 	}
 
-	cls.Status = status
-	return cls
-}
-
-// Store 新建
-func (cls *StatusController) Store() *StatusController {
 	var repeatStatus Status
-	cls.DB.Where(map[string]interface{}{"name": cls.Status.Name}).First(&repeatStatus)
-
+	cls.DB.Where(map[string]interface{}{"name": status.Name}).First(&repeatStatus)
 	if !reflect.DeepEqual(repeatStatus, Status{}) {
 		panic(errors.ThrowForbidden("状态名称重复"))
 	}
 
-	cls.DB.Create(&cls.Status)
+	cls.DB.Create(status)
+	cls.Status = status
+	return cls
+}
+
+// DeleteById 根据id删除
+func (cls *StatusController) DeleteById(id int) *StatusController {
+	cls.FindOneById(id)
+
+	log.Println(cls.Status)
+
+	cls.DB.Delete(&cls.Status)
+
+	return cls
+}
+
+// UpdateById 根据id编辑
+func (cls *StatusController) UpdateById(id int) *StatusController {
+	cls.FindOneById(id)
+
+	var status Status
+	if err := cls.CTX.ShouldBind(&status); err != nil {
+		panic(err)
+	}
+
+	var repeatStatus Status
+	cls.DB.Where(map[string]interface{}{"name": status.Name}).Not(map[string]interface{}{"id": id}).First(&repeatStatus)
+	if !reflect.DeepEqual(repeatStatus, Status{}) {
+		panic(errors.ThrowForbidden("状态名称重复"))
+	}
+
+	cls.Status.Name = status.Name
+	cls.DB.Save(cls.Status)
 
 	return cls
 }
@@ -63,7 +89,11 @@ func (cls *StatusController) FindMoreByQuery() *StatusController {
 
 // FindOneById 根据编号搜索
 func (cls *StatusController) FindOneById(id int) *StatusController {
-	cls.DB.Where(id).First(&cls.Status)
+	cls.DB.Where(map[string]interface{}{"id": id}).First(&cls.Status)
+
+	if reflect.DeepEqual(cls.Status, Status{}) {
+		panic(errors.ThrowEmpty(""))
+	}
 
 	return cls
 }

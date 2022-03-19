@@ -3,7 +3,9 @@ package controllers
 import (
 	"database/sql"
 	"gin-learn/errors"
+	"gin-learn/tools"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -99,12 +101,12 @@ func (cls *AccountController) FindMoreByQuery() *AccountController {
 		}
 	}
 
-	//query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
-	//if activatedAtBetween := cls.CTX.Query("activated_at_between"); activatedAtBetween != "" {
-	//	query.Where("activated_at BETWEEN ? AND ?", strings.Split(activatedAtBetween, "~"))
-	//}
+	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
+	if activatedAtBetween := cls.CTX.Query("activated_at_between"); activatedAtBetween != "" {
+		query.Where("activated_at BETWEEN ? AND ?", strings.Split(activatedAtBetween, "~"))
+	}
 
-	//query.Find(&cls.Accounts)
+	query.Find(&cls.Accounts)
 
 	return cls
 }

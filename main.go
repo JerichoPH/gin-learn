@@ -89,19 +89,46 @@ func main() {
 		v1.GET("/status/:id", func(ctx *gin.Context) {
 			statusController := &controllers.StatusController{CTX: ctx, DB: db}
 
-			if id, err := strconv.Atoi(ctx.Param("id")); err != nil {
+			id, err := strconv.Atoi(ctx.Param("id"))
+			if err != nil {
 				panic(errors.ThrowForbidden("id必须是数字"))
-			} else {
-				status := statusController.FindOneById(id).Status
-				ctx.JSON(tools.CorrectIns().Ok("", gin.H{"status": status}))
 			}
+
+			status := statusController.FindOneById(id).Status
+			ctx.JSON(tools.CorrectIns().Ok("", gin.H{"status": status}))
 		})
 
 		// 新建状态
 		v1.POST("/status", func(ctx *gin.Context) {
 			statusController := &controllers.StatusController{CTX: ctx, DB: db}
-			statusController.BindFormStore().Store()
+			statusController.Store()
 			ctx.JSON(tools.CorrectIns().Created("", gin.H{"status": statusController.Status}))
+		})
+
+		// 编辑状态
+		v1.PUT("/status/:id", func(ctx *gin.Context) {
+			statusController := &controllers.StatusController{CTX: ctx, DB: db}
+
+			id, err := strconv.Atoi(ctx.Param("id"))
+			if err != nil {
+				panic(errors.ThrowForbidden("id必须是数字"))
+			}
+
+			status := statusController.UpdateById(id).Status
+			ctx.JSON(tools.CorrectIns().Updated("", gin.H{"status": status}))
+		})
+
+		// 删除状态
+		v1.DELETE("/status/:id", func(ctx *gin.Context) {
+			statusController := &controllers.StatusController{CTX: ctx, DB: db}
+
+			id, err := strconv.Atoi(ctx.Param("id"))
+			if err != nil {
+				panic(errors.ThrowForbidden("id必须是数字"))
+			}
+
+			statusController.DeleteById(id)
+			ctx.JSON(tools.CorrectIns().Deleted(""))
 		})
 	}
 
