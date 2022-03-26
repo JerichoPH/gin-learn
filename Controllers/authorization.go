@@ -100,7 +100,7 @@ func (cls *AuthorizationController) PostLogin() {
 		panic(err)
 	}
 
-	cls.CTX.Set("__currentAccount", account) // 保存用户数据到本次请求
+	//cls.CTX.Set("__currentAccount", account) // 保存用户数据到本次请求
 
 	cls.CTX.JSON(tools.CorrectIns().Ok("登陆成功", gin.H{"token": token}))
 }

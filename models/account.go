@@ -38,7 +38,7 @@ func (cls *AccountModel) FindOneByUsername(username string) Account {
 	}
 
 	var account Account
-	cls.DB.Where(map[string]interface{}{"username": username}).Find(&account)
+	cls.DB.Where(map[string]interface{}{"username": username}).Not(map[string]interface{}{"activated_at": nil}).Find(&account)
 	return account
 }
 

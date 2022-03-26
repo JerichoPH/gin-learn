@@ -54,7 +54,7 @@ func main() {
 		(&controllers.AuthorizationController{CTX: ctx, DB: db}).PostLogin()
 	})
 
-	v1 := router.Group("/v1", middlewares.JwtCheck())
+	v1 := router.Group("/v1", middlewares.JwtCheck(db))
 	{
 		// 用户列表
 		v1.GET("/account", func(ctx *gin.Context) {
