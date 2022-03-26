@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"gin-learn/controllers"
+	v1 "gin-learn/routes/v1"
 	"log"
 	"net/http"
 	"time"
@@ -10,7 +10,6 @@ import (
 	"gorm.io/driver/mysql"
 
 	"gin-learn/errors"
-	"gin-learn/middlewares"
 	"gin-learn/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -44,53 +43,9 @@ func main() {
 
 	router.Use(errors.RecoverHandler) // 异常处理
 
-	// 注册
-	router.POST("/v1/authorization/register", func(ctx *gin.Context) {
-		(&controllers.AuthorizationController{CTX: ctx, DB: db}).PostRegister()
-	})
-
-	// 登录
-	router.POST("/v1/authorization/login", func(ctx *gin.Context) {
-		(&controllers.AuthorizationController{CTX: ctx, DB: db}).PostLogin()
-	})
-
-	v1 := router.Group("/v1", middlewares.JwtCheck(db))
-	{
-		// 用户列表
-		v1.GET("/account", func(ctx *gin.Context) {
-			(&controllers.AccountController{CTX: ctx, DB: db}).Index()
-		})
-
-		// 根据id获取用户详情
-		v1.GET("/account/:id", func(ctx *gin.Context) {
-			(&controllers.AccountController{CTX: ctx, DB: db}).Show()
-		})
-
-		// 状态列表
-		v1.GET("/status", func(ctx *gin.Context) {
-			(&controllers.StatusController{CTX: ctx, DB: db}).Index()
-		})
-
-		// 状态详情
-		v1.GET("/status/:id", func(ctx *gin.Context) {
-			(&controllers.StatusController{CTX: ctx, DB: db}).Show()
-		})
-
-		// 新建状态
-		v1.POST("/status", func(ctx *gin.Context) {
-			(&controllers.StatusController{CTX: ctx, DB: db}).Store()
-		})
-
-		// 编辑状态
-		v1.PUT("/status/:id", func(ctx *gin.Context) {
-			(&controllers.StatusController{CTX: ctx, DB: db}).Update()
-		})
-
-		// 删除状态
-		v1.DELETE("/status/:id", func(ctx *gin.Context) {
-			(&controllers.StatusController{CTX: ctx, DB: db}).Destroy()
-		})
-	}
+	(&v1.AuthorizationRouter{Router: router, DB: db}).Load() // 授权管理路由
+	(&v1.AccountRouter{Router: router, DB: db}).Load()       // 用户管理路由
+	(&v1.StatusRouter{Router: router, DB: db}).Load()        // 状态管理路由
 
 	server := &http.Server{
 		Addr:           ":8080",
