@@ -3,6 +3,7 @@ package models
 import (
 	"gin-learn/errors"
 	"gin-learn/tools"
+	"gorm.io/gorm/clause"
 	"reflect"
 
 	"github.com/gin-gonic/gin"
@@ -11,8 +12,9 @@ import (
 
 type Status struct {
 	gorm.Model
-	UniqueCode string `gorm:"type:VARCHAR(64);unique;NOT NULL;COMMENT:'状态代码';"`
-	Name       string `form:"name" binding:"required" gorm:"type:VARCHAR(64);unique;NOT NULL;COMMENT:'状态名称';"`
+	UniqueCode string    `gorm:"type:VARCHAR(64);unique;NOT NULL;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;COMMENT:'状态代码';"`
+	Name       string    `form:"name" binding:"required" gorm:"type:VARCHAR(64);unique;NOT NULL;COMMENT:'状态名称';"`
+	Accounts   []Account `gorm:"foreignKey:StatusUniqueCode;references:UniqueCode;"`
 }
 
 type StatusModel struct {
@@ -33,7 +35,7 @@ func (cls *StatusModel) Store() Status {
 		panic(errors.ThrowForbidden("状态名称重复"))
 	}
 
-	cls.DB.Create(status)
+	cls.DB.Omit("Accounts").Create(status)
 	return status
 }
 
@@ -46,7 +48,7 @@ func (cls *StatusModel) DeleteById(id int) *StatusModel {
 
 // UpdateById 根据id编辑
 func (cls *StatusModel) UpdateById(id int) *StatusModel {
-	status := cls.FindOneById(id)
+	status := cls.FindOneById(id, "Accounts", "Accounts.Status")
 
 	var statusForm Status
 	if err := cls.CTX.ShouldBind(&statusForm); err != nil {
@@ -65,8 +67,26 @@ func (cls *StatusModel) UpdateById(id int) *StatusModel {
 	return cls
 }
 
-// FindMoreByQuery 根据Query读取用户列表
-func (cls *StatusModel) FindMoreByQuery() []Status {
+// FindOneById 根据编号搜索
+func (cls *StatusModel) FindOneById(id int, preloads ...string) Status {
+	var status Status
+	query := cls.DB.Preload(clause.Associations).Where(map[string]interface{}{"id": id})
+	if preloads != nil {
+		for _, preload := range preloads {
+			query.Preload(preload)
+		}
+	}
+	query.First(&status)
+
+	if reflect.DeepEqual(status, Status{}) {
+		panic(errors.ThrowEmpty(""))
+	}
+
+	return status
+}
+
+// FindManyByQuery 根据Query读取用户列表
+func (cls *StatusModel) FindManyByQuery(preloads ...string) []Status {
 
 	var statuses []Status
 	w := make(map[string]interface{})
@@ -76,19 +96,13 @@ func (cls *StatusModel) FindMoreByQuery() []Status {
 		w["name"] = name
 	}
 
-	(&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n).Find(&statuses)
+	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
+	if preloads != nil {
+		for _, preload := range preloads {
+			query.Preload(preload)
+		}
+	}
+	query.Find(&statuses)
 
 	return statuses
-}
-
-// FindOneById 根据编号搜索
-func (cls *StatusModel) FindOneById(id int) Status {
-	var status Status
-	cls.DB.Where(map[string]interface{}{"id": id}).First(&status)
-
-	if reflect.DeepEqual(status, Status{}) {
-		panic(errors.ThrowEmpty(""))
-	}
-
-	return status
 }
