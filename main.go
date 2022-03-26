@@ -3,11 +3,10 @@ package main
 import (
 	"fmt"
 	v1 "gin-learn/routes/v1"
+	"gorm.io/driver/mysql"
 	"log"
 	"net/http"
 	"time"
-
-	"gorm.io/driver/mysql"
 
 	"gin-learn/errors"
 	"gin-learn/models"
@@ -37,16 +36,7 @@ func initDB() *gorm.DB {
 	return db
 }
 
-func main() {
-	db := initDB()
-	router := gin.Default()
-
-	router.Use(errors.RecoverHandler) // 异常处理
-
-	(&v1.AuthorizationRouter{Router: router, DB: db}).Load() // 授权管理路由
-	(&v1.AccountRouter{Router: router, DB: db}).Load()       // 用户管理路由
-	(&v1.StatusRouter{Router: router, DB: db}).Load()        // 状态管理路由
-
+func initServer(router *gin.Engine) {
 	server := &http.Server{
 		Addr:           ":8080",
 		Handler:        router,
@@ -58,4 +48,14 @@ func main() {
 	if serverErr != nil {
 		log.Println("服务器启动错误：", serverErr)
 	}
+}
+
+func main() {
+	db := initDB()
+	router := gin.Default()
+
+	router.Use(errors.RecoverHandler)             // 异常处理
+	(&v1.RoutesV1{Router: router, DB: db}).Load() // 加载v1路由
+
+	initServer(router) // 启动服务
 }

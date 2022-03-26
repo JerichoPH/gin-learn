@@ -12,16 +12,28 @@ import (
 // Account 用户表
 type Account struct {
 	gorm.Model
-	Username    string       `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;comment '用户名';"`
-	Password    string       `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment '密码';"`
-	Nickname    string       `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;comment '昵称';"`
-	ActivatedAt sql.NullTime `gorm:"comment '激活时间'"`
+	Username         string       `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;COMMENT:'用户名';"`
+	Password         string       `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment:'密码';"`
+	Nickname         string       `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;COMMENT:'昵称';"`
+	ActivatedAt      sql.NullTime `gorm:"type:DATETIME;COMMENT:'激活时间';"`
+	StatusUniqueCode string       `gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';COMMENT:'状态代码';"`
+	Status           Status       `gorm:"references:UniqueCode;foreignKey:StatusUniqueCode;"`
 }
 
 // AccountModel 用户模型
 type AccountModel struct {
 	CTX *gin.Context
 	DB  *gorm.DB
+}
+
+// ScopeActivated 已经激活的
+func (cls *AccountModel) ScopeActivated(db *gorm.DB) *gorm.DB {
+	return db.Not(map[string]interface{}{"activated_at": nil})
+}
+
+// ScopeNotActivated 未激活的
+func (cls *AccountModel) ScopeNotActivated(db *gorm.DB) *gorm.DB {
+	return db.Where(map[string]interface{}{"activated_at": nil})
 }
 
 // FindOneById 根据id获取用户
@@ -38,7 +50,7 @@ func (cls *AccountModel) FindOneByUsername(username string) Account {
 	}
 
 	var account Account
-	cls.DB.Where(map[string]interface{}{"username": username}).Not(map[string]interface{}{"activated_at": nil}).Find(&account)
+	cls.DB.Scopes(cls.ScopeActivated).Where(map[string]interface{}{"username": username}).Find(&account)
 	return account
 }
 

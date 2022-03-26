@@ -11,7 +11,8 @@ import (
 
 type Status struct {
 	gorm.Model
-	Name string `form:"name" binding:"required" gorm:"type=VARCHAR(64);unique;NOT NULL;comment '状态名称'"`
+	UniqueCode string `gorm:"type:VARCHAR(64);unique;NOT NULL;COMMENT:'状态代码';"`
+	Name       string `form:"name" binding:"required" gorm:"type:VARCHAR(64);unique;NOT NULL;COMMENT:'状态名称';"`
 }
 
 type StatusModel struct {
