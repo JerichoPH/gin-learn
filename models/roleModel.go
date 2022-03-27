@@ -29,12 +29,9 @@ func (cls *RoleModel) Store() Role {
 
 	var repeatRole Role
 	cls.DB.Where(map[string]interface{}{"name": role.Name}).First(&repeatRole)
-	if !reflect.DeepEqual(repeatRole, Role{}) {
-		panic(errors.ThrowForbidden("角色名称重复"))
-	}
+	tools.IsRepeat(repeatRole, Role{}, "角色名称")
 
-	cls.DB.Omit(clause.Associations).Create(&role)
-
+	cls.DB.Omit(clause.Associations).Create(role)
 	return role
 }
 
@@ -48,23 +45,23 @@ func (cls *RoleModel) DeleteOneById(id int) *RoleModel {
 
 // UpdateOneById 根据id编辑
 func (cls *RoleModel) UpdateOneById(id int) Role {
-	role := cls.FindOneById(id)
+	status := cls.FindOneById(id, "Accounts", "Accounts.Status")
 
-	var roleForm Role
-	if err := cls.CTX.ShouldBind(&roleForm); err != nil {
+	var statusForm Status
+	if err := cls.CTX.ShouldBind(&statusForm); err != nil {
 		panic(err)
 	}
 
-	var repeatRole Role
-	cls.DB.Where(map[string]interface{}{"name": roleForm.Name}).Not(map[string]interface{}{"id": id}).First(&repeatRole)
-	if !reflect.DeepEqual(repeatRole, Role{}) {
-		panic(errors.ThrowForbidden("角色名称重复"))
+	var repeatStatus Status
+	cls.DB.Where(map[string]interface{}{"name": statusForm.Name}).Not(map[string]interface{}{"id": id}).First(&repeatStatus)
+	if !reflect.DeepEqual(repeatStatus, Status{}) {
+		panic(errors.ThrowForbidden("状态名称重复"))
 	}
 
-	role.Name = roleForm.Name
-	cls.DB.Omit(clause.Associations).Save(&role)
+	status.Name = statusForm.Name
+	cls.DB.Omit(clause.Associations).Save(&status)
 
-	return role
+	return status
 }
 
 // FindOneById 根据编号查询

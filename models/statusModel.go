@@ -31,9 +31,7 @@ func (cls *StatusModel) Store() Status {
 
 	var repeatStatus Status
 	cls.DB.Where(map[string]interface{}{"name": status.Name}).First(&repeatStatus)
-	if !reflect.DeepEqual(repeatStatus, Status{}) {
-		panic(errors.ThrowForbidden("状态名称重复"))
-	}
+	tools.IsRepeat(repeatStatus, Status{}, "状态名称")
 
 	cls.DB.Omit(clause.Associations).Create(status)
 	return status
