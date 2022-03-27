@@ -46,7 +46,7 @@ func (cls *StatusModel) DeleteById(id int) *StatusModel {
 
 // UpdateById 根据id编辑
 func (cls *StatusModel) UpdateById(id int) Status {
-	status := cls.FindOneById(id, "Accounts", "Accounts.Status")
+	status := cls.FindOneById(id)
 
 	var statusForm Status
 	if err := cls.CTX.ShouldBind(&statusForm); err != nil {
@@ -66,15 +66,9 @@ func (cls *StatusModel) UpdateById(id int) Status {
 }
 
 // FindOneById 根据编号搜索
-func (cls *StatusModel) FindOneById(id int, preloads ...string) Status {
+func (cls *StatusModel) FindOneById(id int, ) Status {
 	var status Status
-	query := cls.DB.Preload(clause.Associations).Where(map[string]interface{}{"id": id})
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
-	query.First(&status)
+	cls.DB.Preload("Accounts").Where(map[string]interface{}{"id": id}).First(&status)
 
 	tools.IsEmpty(status, Status{}, "状态")
 
@@ -82,7 +76,7 @@ func (cls *StatusModel) FindOneById(id int, preloads ...string) Status {
 }
 
 // FindManyByQuery 根据Query读取用户列表
-func (cls *StatusModel) FindManyByQuery(preloads ...string) []Status {
+func (cls *StatusModel) FindManyByQuery() []Status {
 	var statuses []Status
 	w := make(map[string]interface{})
 	n := make(map[string]interface{})
@@ -92,15 +86,10 @@ func (cls *StatusModel) FindManyByQuery(preloads ...string) []Status {
 	}
 
 	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
 	if name := cls.CTX.Query("name"); name != "" {
 		query.Where("`name` like '%?%'", name)
 	}
-	query.Find(&statuses)
+	query.Preload("Accounts").Find(&statuses)
 
 	return statuses
 }

@@ -18,7 +18,7 @@ type StatusController struct {
 // Index 列表
 func (cls *StatusController) Index() {
 	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
-	statuses := statusModel.FindManyByQuery("Accounts", "Accounts.Status")
+	statuses := statusModel.FindManyByQuery()
 	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"statuses": statuses}))
 }
 
@@ -26,19 +26,15 @@ func (cls *StatusController) Index() {
 func (cls *StatusController) Show() {
 	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
 
-	id, err := strconv.Atoi(cls.CTX.Param("id"))
-	if err != nil {
-		panic(errors.ThrowForbidden("id必须是数字"))
-	}
+	id := tools.GetID(cls.CTX.Param("id"))
 
-	status := statusModel.FindOneById(id, "Accounts", "Accounts.Status")
+	status := statusModel.FindOneById(id)
 	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"status": status}))
 }
 
 // Store 新建
 func (cls *StatusController) Store() {
-	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
-	status := statusModel.Store()
+	status := (&models.StatusModel{CTX: cls.CTX, DB: cls.DB}).Store()
 	cls.CTX.JSON(tools.CorrectIns().Created("", gin.H{"status": status}))
 }
 
@@ -46,10 +42,7 @@ func (cls *StatusController) Store() {
 func (cls *StatusController) Update() {
 	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
 
-	id, err := strconv.Atoi(cls.CTX.Param("id"))
-	if err != nil {
-		panic(errors.ThrowForbidden("id必须是数字"))
-	}
+	id := tools.GetID(cls.CTX.Param("id"))
 
 	status := statusModel.UpdateById(id)
 	cls.CTX.JSON(tools.CorrectIns().Updated("", gin.H{"status": status}))

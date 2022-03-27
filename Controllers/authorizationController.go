@@ -55,7 +55,7 @@ func (cls *AuthorizationController) PostRegister() {
 
 	// 检查重复项
 	accountModel := &models.AccountModel{CTX: cls.CTX, DB: cls.DB}
-	repeatAccount := accountModel.FindOneByUsername(registerForm.Username, "Status")
+	repeatAccount := accountModel.FindOneByUsername(registerForm.Username)
 	if !reflect.DeepEqual(repeatAccount, models.Account{}) {
 		panic(errors.ThrowForbidden("用户名被占用"))
 	}
@@ -88,7 +88,7 @@ func (cls *AuthorizationController) PostLogin() {
 
 	// 检查用户是否存在
 	accountModel := &models.AccountModel{CTX: cls.CTX, DB: cls.DB}
-	account := accountModel.FindOneByUsername(loginForm.Username, "Status")
+	account := accountModel.FindOneByUsername(loginForm.Username)
 	if reflect.DeepEqual(account, models.Account{}) {
 		panic(errors.ThrowEmpty("用户不存在"))
 	}

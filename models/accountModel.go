@@ -23,8 +23,9 @@ type Account struct {
 
 // AccountModel 用户模型
 type AccountModel struct {
-	CTX *gin.Context
-	DB  *gorm.DB
+	CTX      *gin.Context
+	DB       *gorm.DB
+	Preloads map[string][]string
 }
 
 // ScopeActivated 已经激活的
@@ -44,41 +45,26 @@ func (cls *AccountModel) ScopeNotActivated(db *gorm.DB) *gorm.DB {
 }
 
 // FindOneById 根据id获取用户
-func (cls *AccountModel) FindOneById(id int, preloads ...string) Account {
+func (cls *AccountModel) FindOneById(id int) Account {
 	var account Account
-	query := cls.DB.
-		Where(map[string]interface{}{"id": id})
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
-	query.First(&account)
+	cls.DB.Preload("Status").Preload("Roles").Where(map[string]interface{}{"id": id}).First(&account)
 	return account
 }
 
 // FindOneByUsername 根据用户名读取用户
-func (cls *AccountModel) FindOneByUsername(username string, preloads ...string) Account {
+func (cls *AccountModel) FindOneByUsername(username string) Account {
 	if username == "" {
 		panic(errors.ThrowForbidden("用户名不能为空"))
 	}
 
 	var account Account
-	query := cls.DB.
-		Scopes(cls.ScopeActivated, cls.ScopeCanLogin).
-		Where(map[string]interface{}{"username": username})
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
-	query.First(&account)
+	cls.DB.Scopes(cls.ScopeActivated, cls.ScopeCanLogin).Preload("Status").Preload("Roles").Where(map[string]interface{}{"username": username}).First(&account)
 
 	return account
 }
 
 // FindManyByQuery 根据Query读取用户列表
-func (cls *AccountModel) FindManyByQuery(preloads ...string) []Account {
+func (cls *AccountModel) FindManyByQuery() []Account {
 	var accounts []Account
 
 	// 搜索条件
@@ -100,15 +86,10 @@ func (cls *AccountModel) FindManyByQuery(preloads ...string) []Account {
 	}
 
 	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
 	if activatedAtBetween := cls.CTX.Query("activated_at_between"); activatedAtBetween != "" {
 		query.Where("activated_at BETWEEN ? AND ?", strings.Split(activatedAtBetween, "~"))
 	}
-	query.Find(&accounts)
+	query.Preload("Status").Preload("Roles").Find(&accounts)
 
 	return accounts
 }

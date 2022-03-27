@@ -61,15 +61,9 @@ func (cls *RoleModel) UpdateOneById(id int) Role {
 }
 
 // FindOneById 根据编号查询
-func (cls *RoleModel) FindOneById(id int, preloads ...string) Role {
+func (cls *RoleModel) FindOneById(id int) Role {
 	var role Role
-	query := cls.DB.Preload(clause.Associations).Where(map[string]interface{}{"id": id})
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
-	query.First(&role)
+	cls.DB.Preload("Accounts").Preload("Account.Status").Where(map[string]interface{}{"id": id}).First(&role)
 
 	tools.IsEmpty(role, Role{}, "角色")
 
@@ -77,7 +71,7 @@ func (cls *RoleModel) FindOneById(id int, preloads ...string) Role {
 }
 
 // FindManyByQuery 根据query参数获取列表
-func (cls *RoleModel) FindManyByQuery(preloads ...string) []Role {
+func (cls *RoleModel) FindManyByQuery() []Role {
 	var roles []Role
 	w := make(map[string]interface{})
 	n := make(map[string]interface{})
@@ -87,15 +81,10 @@ func (cls *RoleModel) FindManyByQuery(preloads ...string) []Role {
 	}
 
 	query := (&tools.QueryBuilder{CTX: cls.CTX, DB: cls.DB}).Init(w, n)
-	if preloads != nil {
-		for _, preload := range preloads {
-			query.Preload(preload)
-		}
-	}
 	if name := cls.CTX.Query("name"); name != "" {
 		query.Where("`name` like '%?%'", name)
 	}
-	query.Find(&roles)
+	query.Preload("Accounts").Preload("Accounts.Status").Find(&roles)
 
 	return roles
 }
@@ -103,6 +92,5 @@ func (cls *RoleModel) FindManyByQuery(preloads ...string) []Role {
 func (cls *RoleModel) BindAccounts(id int, accountIds []int) {
 	role := cls.FindOneById(id)
 	tools.IsEmpty(role, Role{}, "角色")
-
 
 }
