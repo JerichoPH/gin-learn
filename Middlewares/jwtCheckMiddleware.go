@@ -42,13 +42,14 @@ func JwtCheck(db *gorm.DB) gin.HandlerFunc {
 			}
 
 			// 获取用户信息
-			account = (&models.AccountModel{CTX: ctx, DB: db}).FindOneByUsername(claims.Username)
+			account = (&models.AccountModel{CTX: ctx, DB: db}).FindOneByUsername(claims.Username, "Status")
 			if reflect.DeepEqual(account, models.Account{}) {
-				panic(errors.ThrowEmpty("用户不存在"))
+				panic(errors.ThrowUnAuthorization("用户不存在"))
 			}
 		}
 
-		ctx.Set("__currentAccount", account)
+		//ctx.Set("__currentAccount", account)
+
 		ok = true
 		if !ok {
 			ctx.Abort()

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"reflect"
 	"time"
 )
@@ -54,7 +55,7 @@ func (cls *AuthorizationController) PostRegister() {
 
 	// 检查重复项
 	accountModel := &models.AccountModel{CTX: cls.CTX, DB: cls.DB}
-	repeatAccount := accountModel.FindOneByUsername(registerForm.Username)
+	repeatAccount := accountModel.FindOneByUsername(registerForm.Username, "Status")
 	if !reflect.DeepEqual(repeatAccount, models.Account{}) {
 		panic(errors.ThrowForbidden("用户名被占用"))
 	}
@@ -64,11 +65,15 @@ func (cls *AuthorizationController) PostRegister() {
 
 	// 保存新用户
 	account := models.Account{
-		Username: registerForm.Username,
-		Password: string(bytes),
-		Nickname: registerForm.Nickname,
+		Username:         registerForm.Username,
+		Password:         string(bytes),
+		Nickname:         registerForm.Nickname,
+		StatusUniqueCode: "NORMAL",
 	}
-	cls.DB.Create(&account)
+
+	if ret := cls.DB.Omit(clause.Associations).Create(&account); ret.Error != nil {
+		panic(ret.Error)
+	}
 
 	cls.CTX.JSON(tools.CorrectIns().Ok("注册成功", nil))
 }
@@ -83,7 +88,7 @@ func (cls *AuthorizationController) PostLogin() {
 
 	// 检查用户是否存在
 	accountModel := &models.AccountModel{CTX: cls.CTX, DB: cls.DB}
-	account := accountModel.FindOneByUsername(loginForm.Username)
+	account := accountModel.FindOneByUsername(loginForm.Username, "Status")
 	if reflect.DeepEqual(account, models.Account{}) {
 		panic(errors.ThrowEmpty("用户不存在"))
 	}
@@ -99,9 +104,6 @@ func (cls *AuthorizationController) PostLogin() {
 		// 生成jwt错误
 		panic(err)
 	}
-
-	//cls.CTX.Set("__currentAccount", account) // 保存用户数据到本次请求
-
 	cls.CTX.JSON(tools.CorrectIns().Ok("登陆成功", gin.H{"token": token}))
 }
 

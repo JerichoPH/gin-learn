@@ -2,6 +2,7 @@ package tools
 
 import (
 	"gin-learn/errors"
+	"gorm.io/gorm/clause"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ type QueryBuilder struct {
 	DB  *gorm.DB
 }
 
+// Init 初始化查询器
 func (cls *QueryBuilder) Init(w, n map[string]interface{}) *gorm.DB {
 	tx := cls.DB.Where(w).Not(n)
 
@@ -39,5 +41,5 @@ func (cls *QueryBuilder) Init(w, n map[string]interface{}) *gorm.DB {
 		}
 	}
 
-	return tx
+	return tx.Preload(clause.Associations)
 }

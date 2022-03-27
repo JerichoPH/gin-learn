@@ -18,7 +18,7 @@ type StatusController struct {
 // Index 列表
 func (cls *StatusController) Index() {
 	statusModel := &models.StatusModel{CTX: cls.CTX, DB: cls.DB}
-	statuses := statusModel.FindMoreByQuery()
+	statuses := statusModel.FindManyByQuery("Accounts", "Accounts.Status")
 	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"statuses": statuses}))
 }
 
@@ -31,7 +31,7 @@ func (cls *StatusController) Show() {
 		panic(errors.ThrowForbidden("id必须是数字"))
 	}
 
-	status := statusModel.FindOneById(id)
+	status := statusModel.FindOneById(id, "Accounts", "Accounts.Status")
 	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"status": status}))
 }
 

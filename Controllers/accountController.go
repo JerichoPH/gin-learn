@@ -19,7 +19,7 @@ type AccountController struct {
 // Index 列表
 func (cls *AccountController) Index() {
 	accountModel := &models.AccountModel{CTX: cls.CTX, DB: cls.DB}
-	accounts := accountModel.FindMoreByQuery()
+	accounts := accountModel.FindManyByQuery("Status")
 	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"accounts": accounts}))
 }
 
@@ -31,9 +31,10 @@ func (cls *AccountController) Show() {
 	}
 
 	accountModel := &models.AccountModel{CTX: cls.CTX, DB: cls.DB}
-	account := accountModel.FindOneById(id)
+	account := accountModel.FindOneById(id, "Status")
 	if reflect.DeepEqual(account, models.Account{}) {
 		panic(errors.ThrowEmpty("用户不存在"))
 	}
-	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"accounts": account}))
+
+	cls.CTX.JSON(tools.CorrectIns().Ok("", gin.H{"account": account}))
 }
