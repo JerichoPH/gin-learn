@@ -35,7 +35,7 @@ func (cls *StatusModel) Store() Status {
 		panic(errors.ThrowForbidden("状态名称重复"))
 	}
 
-	cls.DB.Omit("Accounts").Create(status)
+	cls.DB.Omit(clause.Associations).Create(status)
 	return status
 }
 
@@ -47,7 +47,7 @@ func (cls *StatusModel) DeleteById(id int) *StatusModel {
 }
 
 // UpdateById 根据id编辑
-func (cls *StatusModel) UpdateById(id int) *StatusModel {
+func (cls *StatusModel) UpdateById(id int) Status {
 	status := cls.FindOneById(id, "Accounts", "Accounts.Status")
 
 	var statusForm Status
@@ -62,9 +62,9 @@ func (cls *StatusModel) UpdateById(id int) *StatusModel {
 	}
 
 	status.Name = statusForm.Name
-	cls.DB.Save(status)
+	cls.DB.Omit(clause.Associations).Save(&status)
 
-	return cls
+	return status
 }
 
 // FindOneById 根据编号搜索

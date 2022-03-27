@@ -14,4 +14,5 @@ func (cls *RoutesV1) Load() {
 	(&AuthorizationRouter{Router: cls.Router, DB: cls.DB}).Load() // 授权管理路由
 	(&AccountRouter{Router: cls.Router, DB: cls.DB}).Load()       // 用户管理路由
 	(&StatusRouter{Router: cls.Router, DB: cls.DB}).Load()        // 状态管理路由
+	(&RoleRouter{Router: cls.Router, DB: cls.DB}).Load()          // 角色管理路由
 }

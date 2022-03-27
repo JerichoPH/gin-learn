@@ -18,6 +18,7 @@ type Account struct {
 	ActivatedAt      sql.NullTime `gorm:"type:DATETIME;COMMENT:'激活时间';"`
 	StatusUniqueCode string       `gorm:"type:VARCHAR(64);COMMENT:'状态代码';"`
 	Status           Status       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:StatusUniqueCode;references:UniqueCode;"`
+	Roles            []*Role      `gorm:"many2many:role_accounts;"`
 }
 
 // AccountModel 用户模型
