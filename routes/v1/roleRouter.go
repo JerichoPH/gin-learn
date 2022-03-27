@@ -38,5 +38,10 @@ func (cls *RoleRouter) Load() {
 		r.DELETE("/role/:id", func(ctx *gin.Context) {
 			(&controllers.RoleController{CTX: ctx, DB: cls.DB}).Destroy()
 		})
+
+		// 绑定用户
+		r.POST("/role/:id/bindAccounts", func(ctx *gin.Context) {
+			(&controllers.RoleController{CTX: ctx, DB: cls.DB}).PostBindAccounts()
+		})
 	}
 }

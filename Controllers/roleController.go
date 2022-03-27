@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"gin-learn/errors"
 	"gin-learn/models"
 	"gin-learn/tools"
 	gin "github.com/gin-gonic/gin"
@@ -49,4 +50,14 @@ func (cls *RoleController) Destroy() {
 
 	(&models.RoleModel{CTX: cls.CTX, DB: cls.DB}).DeleteOneById(id)
 	cls.CTX.JSON(tools.CorrectIns().Deleted(""))
+}
+
+// BindAccounts 绑定用户
+func (cls *RoleController) PostBindAccounts() {
+	roleID := cls.CTX.Param("id")
+	if accountIDs, err := cls.CTX.GetQueryArray("account_ids"); !err {
+		panic(errors.ThrowForbidden("获取参数失败"))
+	} else {
+		(&models.RoleAccountModel{CTX:cls.CTX,DB:cls.DB}).StoreBatch(roleID,accountIDS)
+	}
 }

@@ -18,15 +18,27 @@ func GetID(v string) int {
 }
 
 // IsEmpty 判断是否为空
-func IsEmpty(ins interface{}, class interface{}, name string) {
-	if reflect.DeepEqual(ins, class) {
-		panic(errors.ThrowEmpty(fmt.Sprintf("%v不存在", name)))
+func IsEmpty(ins interface{}, class interface{}, name string) (isEmpty bool) {
+	isEmpty = reflect.DeepEqual(ins, class)
+
+	if name != "" {
+		if isEmpty {
+			panic(errors.ThrowEmpty(fmt.Sprintf("%v不存在", name)))
+		}
 	}
+
+	return isEmpty
 }
 
 // IsRepeat 判断是否重复
-func IsRepeat(ins interface{}, class interface{}, name string) {
-	if !reflect.DeepEqual(ins, class) {
-		panic(errors.ThrowForbidden(fmt.Sprintf("%v重复", name)))
+func IsRepeat(ins interface{}, class interface{}, name string) (isRepeat bool) {
+	isRepeat = !reflect.DeepEqual(ins, class)
+
+	if name != "" {
+		if isRepeat {
+			panic(errors.ThrowForbidden(fmt.Sprintf("%v重复", name)))
+		}
 	}
+
+	return
 }
