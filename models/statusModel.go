@@ -76,16 +76,13 @@ func (cls *StatusModel) FindOneById(id int, preloads ...string) Status {
 	}
 	query.First(&status)
 
-	if reflect.DeepEqual(status, Status{}) {
-		panic(errors.ThrowEmpty(""))
-	}
+	tools.IsEmpty(status, Status{}, "状态")
 
 	return status
 }
 
 // FindManyByQuery 根据Query读取用户列表
 func (cls *StatusModel) FindManyByQuery(preloads ...string) []Status {
-
 	var statuses []Status
 	w := make(map[string]interface{})
 	n := make(map[string]interface{})
@@ -99,6 +96,9 @@ func (cls *StatusModel) FindManyByQuery(preloads ...string) []Status {
 		for _, preload := range preloads {
 			query.Preload(preload)
 		}
+	}
+	if name := cls.CTX.Query("name"); name != "" {
+		query.Where("`name` like '%?%'", name)
 	}
 	query.Find(&statuses)
 

@@ -12,9 +12,9 @@ import (
 // Account 用户表
 type Account struct {
 	gorm.Model
-	Username         string       `form:"username" gorm:"type:VARCHAR(64);NOT NULL;unique_index:users__username__uidx;COMMENT:'用户名';"`
+	Username         string       `form:"username" gorm:"type:VARCHAR(64);UNIQUE;NOT NULL;COMMENT:'用户名';"`
 	Password         string       `form:"password" gorm:"type:VARCHAR(128);NOT NULL;comment:'密码';"`
-	Nickname         string       `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';index:users__nickname__idx;COMMENT:'昵称';"`
+	Nickname         string       `form:"nickname" gorm:"type:VARCHAR(64);NOT NULL;DEFAULT '';INDEX:users__nickname__idx;COMMENT:'昵称';"`
 	ActivatedAt      sql.NullTime `gorm:"type:DATETIME;COMMENT:'激活时间';"`
 	StatusUniqueCode string       `gorm:"type:VARCHAR(64);COMMENT:'状态代码';"`
 	Status           Status       `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:StatusUniqueCode;references:UniqueCode;"`
