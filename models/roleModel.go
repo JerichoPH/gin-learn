@@ -1,12 +1,10 @@
 package models
 
 import (
-	"gin-learn/errors"
 	"gin-learn/tools"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"reflect"
 )
 
 type Role struct {
@@ -45,23 +43,21 @@ func (cls *RoleModel) DeleteOneById(id int) *RoleModel {
 
 // UpdateOneById 根据id编辑
 func (cls *RoleModel) UpdateOneById(id int) Role {
-	status := cls.FindOneById(id, "Accounts", "Accounts.Status")
+	role := cls.FindOneById(id)
 
-	var statusForm Status
-	if err := cls.CTX.ShouldBind(&statusForm); err != nil {
+	var roleForm Role
+	if err := cls.CTX.ShouldBind(&roleForm); err != nil {
 		panic(err)
 	}
 
-	var repeatStatus Status
-	cls.DB.Where(map[string]interface{}{"name": statusForm.Name}).Not(map[string]interface{}{"id": id}).First(&repeatStatus)
-	if !reflect.DeepEqual(repeatStatus, Status{}) {
-		panic(errors.ThrowForbidden("状态名称重复"))
-	}
+	var repeatRole Role
+	cls.DB.Where(map[string]interface{}{"name": roleForm.Name}).Not(map[string]interface{}{"id": id}).First(&repeatRole)
+	tools.IsRepeat(repeatRole, Role{}, "角色名称")
 
-	status.Name = statusForm.Name
-	cls.DB.Omit(clause.Associations).Save(&status)
+	role.Name = roleForm.Name
+	cls.DB.Omit(clause.Associations).Save(&role)
 
-	return status
+	return role
 }
 
 // FindOneById 根据编号查询
